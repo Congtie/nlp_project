@@ -3,6 +3,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report
+from sklearn.utils.class_weight import compute_class_weight
+from sklearn.ensemble import RandomForestClassifier
 
 # Load the dataset
 # filepath: c:\Users\legio\Documents\GitHub\nlp_project\train_data.csv
@@ -34,11 +36,15 @@ X_train_theme, X_test_theme, y_train_theme, y_test_theme = train_test_split(
     X, data['category'], test_size=0.2, random_state=42
 )
 
-# Train a classifier for theme
-theme_model = LogisticRegression()
+# Handle class imbalance for theme classification
+class_weights = compute_class_weight('balanced', classes=data['category'].unique(), y=data['category'])
+class_weight_dict = dict(zip(data['category'].unique(), class_weights))
+
+# Train a Random Forest classifier for theme
+theme_model = RandomForestClassifier(class_weight=class_weight_dict, random_state=42)
 theme_model.fit(X_train_theme, y_train_theme)
 
 # Evaluate theme classifier
 y_pred_theme = theme_model.predict(X_test_theme)
 print("Theme Classification Report:")
-print(classification_report(y_test_theme, y_pred_theme))
+print(classification_report(y_test_theme, y_pred_theme, zero_division=0))
