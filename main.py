@@ -6,45 +6,39 @@ from sklearn.metrics import classification_report
 from sklearn.utils.class_weight import compute_class_weight
 from sklearn.ensemble import RandomForestClassifier
 
-# Load the dataset
-# filepath: c:\Users\legio\Documents\GitHub\nlp_project\train_data.csv
 data = pd.read_csv('train_data.csv')
-
-# Preprocess the data
 data['cleaned_sample'] = data['sample'].str.replace(r'\$NE\$', '', regex=True).str.lower()
-
-# Feature extraction using TF-IDF
 tfidf = TfidfVectorizer(max_features=5000)
 X = tfidf.fit_transform(data['cleaned_sample'])
 
-# Split data for dialect classification
 X_train_dialect, X_test_dialect, y_train_dialect, y_test_dialect = train_test_split(
     X, data['dialect'], test_size=0.2, random_state=42
 )
 
-# Train a classifier for dialect
 dialect_model = LogisticRegression()
 dialect_model.fit(X_train_dialect, y_train_dialect)
-
-# Evaluate dialect classifier
 y_pred_dialect = dialect_model.predict(X_test_dialect)
 print("Dialect Classification Report:")
 print(classification_report(y_test_dialect, y_pred_dialect))
 
-# Split data for theme classification
 X_train_theme, X_test_theme, y_train_theme, y_test_theme = train_test_split(
     X, data['category'], test_size=0.2, random_state=42
 )
 
-# Handle class imbalance for theme classification
 class_weights = compute_class_weight('balanced', classes=data['category'].unique(), y=data['category'])
 class_weight_dict = dict(zip(data['category'].unique(), class_weights))
 
-# Train a Random Forest classifier for theme
 theme_model = RandomForestClassifier(class_weight=class_weight_dict, random_state=42)
 theme_model.fit(X_train_theme, y_train_theme)
-
-# Evaluate theme classifier
 y_pred_theme = theme_model.predict(X_test_theme)
 print("Theme Classification Report:")
 print(classification_report(y_test_theme, y_pred_theme, zero_division=0))
+
+test_data = pd.read_csv('test_data.csv')
+test_data['cleaned_sample'] = test_data['sample'].str.replace(r'\$NE\$', '', regex=True).str.lower()
+X_test = tfidf.transform(test_data['cleaned_sample'])
+test_data['predicted_dialect'] = dialect_model.predict(X_test)
+test_data['predicted_theme'] = theme_model.predict(X_test)
+output_filepath = 'predictions.csv'
+test_data[['datapointID', 'predicted_dialect', 'predicted_theme']].to_csv(output_filepath, index=False)
+print(f"Predictions saved to {output_filepath}")
