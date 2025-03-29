@@ -6,9 +6,15 @@ from sklearn.metrics import classification_report
 from sklearn.utils.class_weight import compute_class_weight
 from sklearn.ensemble import RandomForestClassifier
 
+import nltk
+nltk.download('stopwords')
+from nltk.corpus import stopwords
+
+romanian_stopwords = stopwords.words('romanian')
+
 data = pd.read_csv('train_data.csv')
 data['cleaned_sample'] = data['sample'].str.replace(r'\$NE\$', '', regex=True).str.lower()
-tfidf = TfidfVectorizer(max_features=5000)
+tfidf = TfidfVectorizer(max_features=10000, stop_words=romanian_stopwords, ngram_range=(1, 3))
 X = tfidf.fit_transform(data['cleaned_sample'])
 
 X_train_dialect, X_test_dialect, y_train_dialect, y_test_dialect = train_test_split(
